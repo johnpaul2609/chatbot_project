@@ -1,5 +1,6 @@
 import re
 from typing import List
+from nltk.stem import PorterStemmer
 
 class NLPService:
     """Simple NLP Service without spaCy"""
@@ -39,3 +40,5 @@ class NLPService:
             return 0.0
         common = words1.intersection(words2)
         return len(common) / max(len(words1), len(words2))
+stemmer = PorterStemmer()
+words = [stemmer.stem(w) for w in words if w not in stop_words]    

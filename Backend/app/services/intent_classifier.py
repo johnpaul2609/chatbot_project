@@ -38,7 +38,7 @@ class IntentClassifier:
                 labels.append(tag)
         
         self.pipeline = Pipeline([
-            ('tfidf', TfidfVectorizer()),
+            ('tfidf', TfidfVectorizer(stop_words="english")),
             ('clf', MultinomialNB())
         ])
         
