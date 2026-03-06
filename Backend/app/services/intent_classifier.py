@@ -54,7 +54,7 @@ class IntentClassifier:
         probabilities = self.pipeline.predict_proba([text.lower()])[0]
         confidence = float(np.max(probabilities))
         
-        if confidence < 0.3:
+        if confidence < 0.1:
             intent = "unknown"
         
         return intent, confidence
