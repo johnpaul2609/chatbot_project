@@ -126,8 +126,8 @@ export function Chatbot() {
     
     // Send mode selection to backend
     const modeQuery = selectedMode === 'admission' 
-      ? "I need help with admission-related queries"
-      : "I need help with academic support";
+       ? "admission process"
+       : "academic information";
     
     sendMessageToBackend(modeQuery);
   };
