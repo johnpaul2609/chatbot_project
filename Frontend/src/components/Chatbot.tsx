@@ -20,7 +20,7 @@ interface ChatResponse {
 }
 
 // API Configuration
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = "http://127.0.0.1:8000";
 
 export function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
@@ -114,22 +114,53 @@ export function Chatbot() {
 
   const handleModeSelection = (selectedMode: 'admission' | 'academic') => {
     setMode(selectedMode);
-    
+
     const userMessage: Message = {
       id: Date.now().toString(),
       text: selectedMode === 'admission' ? 'Admission Support' : 'Academic Support',
       sender: 'user',
       timestamp: new Date()
     };
-    
-    setMessages(prev => [...prev, userMessage]);
-    
-    // Send mode selection to backend
-    const modeQuery = selectedMode === 'admission' 
-       ? "admission process"
-       : "academic information";
-    
-    sendMessageToBackend(modeQuery);
+
+    // Show a welcome message directly — no backend call needed
+    const welcomeText = selectedMode === 'admission'
+      ? `Welcome to St Lourdes Engineering College Admission Assistant! 🎓
+
+I can help you with:
+• Admission process & steps
+• Eligibility criteria
+• Fee structure & scholarships
+• Courses offered (CSE, IT, AI&DS, Cyber, MECH)
+• Hostel & campus facilities
+• Placement records & companies
+• Contact information
+
+What would you like to know? You can type your question or use the quick buttons below.`
+      : `I'm the Admission Support Assistant.
+
+For academic queries like subjects, timetable, faculty contacts, or exam schedules, please contact the college directly:
+
+📞 Phone: +91-44-12345678
+📧 Email: admissions@stlourdes.edu
+🕐 Office Hours: Mon–Sat, 9 AM – 5 PM
+
+You can switch back to Admission Support using the "← Change Support Mode" button below.`;
+
+    const botWelcome: Message = {
+      id: (Date.now() + 1).toString(),
+      text: welcomeText,
+      sender: 'bot',
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage, botWelcome]);
+
+    // Set starter suggestions for admission mode
+    if (selectedMode === 'admission') {
+      setSuggestions(['How to apply?', 'What are the fees?', 'Eligibility criteria?', 'Courses offered?']);
+    } else {
+      setSuggestions(['How to apply?', 'What are the fees?', 'Hostel facility?', 'Placement details?']);
+    }
   };
 
   const sendMessageToBackend = async (messageText: string) => {
@@ -144,6 +175,7 @@ export function Chatbot() {
         body: JSON.stringify({
           message: messageText,
           user_id: userId,
+          mode: mode,
         }),
       });
 
@@ -201,7 +233,7 @@ export function Chatbot() {
       return "We offer UG programs in Computer Science, Electronics, Mechanical, and Civil Engineering. For PG, we have M.E. in CSE and VLSI Design.";
     }
     
-    return "I'm here to help! Ask me about admissions, fees, programs, facilities, or placements. For the best experience, please ensure the backend server is running.";
+    return "I'm here to help! Ask me about admissions, fees, programs, facilities, or placements. ";
   };
 
   const handleSendMessage = () => {

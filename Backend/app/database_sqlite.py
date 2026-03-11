@@ -62,4 +62,4 @@ class Database:
         last_id = cursor.lastrowid
         conn.close()
 
-        return last_id  
+        return last_id 
