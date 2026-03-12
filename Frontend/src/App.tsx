@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import AdminDashboard from './components/admin/AdminDashboard';
 import { Menu, X, Phone, Mail, MapPin, GraduationCap, Users, Award, BookOpen, Microscope, Building2, ChevronRight } from 'lucide-react';
 import { Chatbot } from './components/Chatbot';
 import { ImageWithFallback } from './components/figma/ImageWithFallback';
@@ -84,6 +85,11 @@ export default function App() {
     { number: '85%', label: 'Placement Rate' },
     { number: '50+', label: 'Years of Excellence' }
   ];
+
+  // Route to admin dashboard
+  if (window.location.pathname === '/admin') {
+    return <AdminDashboard />;
+  }
 
   return (
     <div className="min-h-screen bg-white">

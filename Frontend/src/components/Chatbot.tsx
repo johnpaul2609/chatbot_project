@@ -8,6 +8,10 @@ interface Message {
   timestamp: Date;
   intent?: string;
   confidence?: number;
+  download_url?: string;
+  material_name?: string;
+  image_url?: string;
+  image_label?: string;
 }
 
 type ChatMode = 'selection' | 'admission' | 'academic';
@@ -17,6 +21,10 @@ interface ChatResponse {
   intent: string;
   confidence: number;
   suggestions?: string[];
+  download_url?: string;
+  material_name?: string;
+  image_url?: string;
+  image_label?: string;
 }
 
 // API Configuration
@@ -39,14 +47,8 @@ export function Chatbot() {
   const [backendStatus, setBackendStatus] = useState<'online' | 'offline' | 'checking'>('checking');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Generate or retrieve user ID
-  const [userId] = useState(() => {
-    const stored = localStorage.getItem('chatbot_user_id');
-    if (stored) return stored;
-    const newId = 'user_' + Math.random().toString(36).substr(2, 9);
-    localStorage.setItem('chatbot_user_id', newId);
-    return newId;
-  });
+  // Fresh user ID every session (no history persistence)
+  const [userId] = useState(() => 'user_' + Math.random().toString(36).substr(2, 9));
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -61,12 +63,19 @@ export function Chatbot() {
     checkBackendHealth();
   }, []);
 
-  // Load chat history when opened
+  // Reset chat to fresh state every time the chatbot is opened
   useEffect(() => {
-    if (isOpen && backendStatus === 'online') {
-      loadChatHistory();
+    if (isOpen) {
+      setMode('selection');
+      setMessages([{
+        id: '1',
+        text: 'Hello! Welcome to St Lourdes Engineering College. Please select how I can assist you today:',
+        sender: 'bot',
+        timestamp: new Date()
+      }]);
+      setSuggestions([]);
     }
-  }, [isOpen, backendStatus]);
+  }, [isOpen]);
 
   const checkBackendHealth = async () => {
     try {
@@ -79,38 +88,7 @@ export function Chatbot() {
     }
   };
 
-  const loadChatHistory = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/chat/history/${userId}?limit=5`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.conversations && data.conversations.length > 0) {
-          const formattedMessages: Message[] = data.conversations
-            .reverse()
-            .flatMap((conv: any) => [
-              {
-                id: `user-${conv._id}`,
-                text: conv.message,
-                sender: 'user' as const,
-                timestamp: new Date(conv.timestamp),
-              },
-              {
-                id: `bot-${conv._id}`,
-                text: conv.response,
-                sender: 'bot' as const,
-                timestamp: new Date(conv.timestamp),
-                intent: conv.intent,
-                confidence: conv.confidence,
-              },
-            ]);
-          // Keep the welcome message and add history
-          setMessages(prev => [...prev, ...formattedMessages]);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading chat history:', error);
-    }
-  };
+
 
   const handleModeSelection = (selectedMode: 'admission' | 'academic') => {
     setMode(selectedMode);
@@ -136,15 +114,19 @@ I can help you with:
 • Contact information
 
 What would you like to know? You can type your question or use the quick buttons below.`
-      : `I'm the Admission Support Assistant.
+      : `Welcome to St Lourdes Academic Support Assistant!
 
-For academic queries like subjects, timetable, faculty contacts, or exam schedules, please contact the college directly:
+I can help you with:
+- Syllabus (all departments & semesters)
+- Study notes & materials
+- Class timetable & period schedule
+- Exam schedule (end semester & internal)
+- Faculty information & HOD contacts
+- Attendance rules & policy
+- Library & lab information
+- Project & internship guidance
 
-📞 Phone: +91-44-12345678
-📧 Email: admissions@stlourdes.edu
-🕐 Office Hours: Mon–Sat, 9 AM – 5 PM
-
-You can switch back to Admission Support using the "← Change Support Mode" button below.`;
+Try asking: CSE syllabus | exam schedule | IT notes | attendance rules`;
 
     const botWelcome: Message = {
       id: (Date.now() + 1).toString(),
@@ -155,11 +137,10 @@ You can switch back to Admission Support using the "← Change Support Mode" but
 
     setMessages(prev => [...prev, userMessage, botWelcome]);
 
-    // Set starter suggestions for admission mode
     if (selectedMode === 'admission') {
       setSuggestions(['How to apply?', 'What are the fees?', 'Eligibility criteria?', 'Courses offered?']);
     } else {
-      setSuggestions(['How to apply?', 'What are the fees?', 'Hostel facility?', 'Placement details?']);
+      setSuggestions(['CSE Syllabus?', 'Exam schedule?', 'IT Notes?', 'Timetable?']);
     }
   };
 
@@ -192,6 +173,10 @@ You can switch back to Admission Support using the "← Change Support Mode" but
         timestamp: new Date(),
         intent: data.intent,
         confidence: data.confidence,
+        download_url: data.download_url,
+        material_name: data.material_name,
+        image_url: data.image_url,
+        image_label: data.image_label,
       };
 
       setMessages(prev => [...prev, botMessage]);
@@ -356,6 +341,46 @@ You can switch back to Admission Support using the "← Change Support Mode" but
                   }`}
                 >
                   <p className="text-sm whitespace-pre-line">{message.text}</p>
+                  {message.image_url && (
+                    <div className="mt-3">
+                      {message.image_label && (
+                        <p className="text-xs font-semibold text-blue-700 mb-1">{message.image_label}</p>
+                      )}
+                      <img
+                        src={message.image_url}
+                        alt={message.image_label || 'Timetable'}
+                        className="w-full rounded-lg border border-blue-200 shadow-sm cursor-pointer"
+                        onClick={() => window.open(message.image_url, '_blank')}
+                        title="Click to open full size"
+                      />
+                      <a
+                        href={message.image_url}
+                        download={message.image_label ? message.image_label + '.png' : 'timetable.png'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors w-full justify-center"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                        </svg>
+                        Download Timetable Image
+                      </a>
+                    </div>
+                  )}
+                  {message.download_url && (
+                    <a
+                      href={message.download_url}
+                      download={message.material_name || 'notes.pdf'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors w-full justify-center"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                      </svg>
+                      Download PDF — {message.material_name || 'Notes'}
+                    </a>
+                  )}
                   <div className="flex items-center justify-between mt-1">
                     <p className={`text-xs ${message.sender === 'user' ? 'text-blue-100' : 'text-gray-500'}`}>
                       {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

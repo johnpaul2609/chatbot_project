@@ -11,4 +11,8 @@ class ChatResponse(BaseModel):
     intent: str
     confidence: float
     suggestions: Optional[List[str]] = []
+    download_url: Optional[str] = None      # PDF download link
+    material_name: Optional[str] = None     # Filename for download
+    image_url: Optional[str] = None         # Timetable image URL
+    image_label: Optional[str] = None       # Image caption
 
